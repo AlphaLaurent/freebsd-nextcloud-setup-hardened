@@ -238,10 +238,10 @@ where source_location is the dataset location on your FreeNAS host, and destinat
 $ iocage fstab -e nextcloud
 ```
 
-This will open the fstab file in vi (if you just entered, type :q! enter to quit). If you're not familiar with vi, or prefer not to use it (the commands take some getting used to), this can be changed by using the setenv command with the EDITOR flag:
+This will open the fstab file in vi (if you just entered, type :q! enter to quit). If you're not familiar with vi, or prefer not to use it (the commands take some getting used to), this can be changed by using the export command with the EDITOR flag:
 
 ```bash
-$ setenv EDITOR /usr/local/bin/nano
+$ export EDITOR='/usr/local/bin/nano'
 ```
 
 This will change the default editor to use the text editor nano for this session. Other alternatives include ee, emacs, vim. Choose one based on your own preferences and what you have installed. I will be using nano for this guide as it's relatively intuitive to understand.
@@ -948,6 +948,7 @@ $ crontab -u <user> -e
 ```
 
 In this case, we will configure the crontab of the "www" user, and add an entry to run the nextcloud cron script. Before we do this, lets change the environment editor to nano.
+This time, we use the command setenv EDITOR because iocage console <jail> uses csh shell by default instead of the Freenas root default zsh.
 
 ```bash
 $ setenv EDITOR nano
@@ -1031,6 +1032,7 @@ $ su -m www -c 'php /usr/local/www/nextcloud/occ config:system:set redis host --
 $ su -m www -c 'php /usr/local/www/nextcloud/occ config:system:set redis port --value=0 --type=integer'
 $ su -m www -c 'php /usr/local/www/nextcloud/occ config:system:set memcache.local --value="\OC\Memcache\APCu"'
 $ su -m www -c 'php /usr/local/www/nextcloud/occ config:system:set memcache.locking --value="\OC\Memcache\Redis"'
+$ su -m www -c 'php /usr/local/www/nextcloud/occ config:system:set memcache.distributed --value="\OC\Memcache\Redis"'
 ```
 
 These commands switch user to the user "www", where the [su](https://www.freebsd.org/cgi/man.cgi?su(1)) flag -m leaves the environment unmodified. The -c flag specifies a command to be run within the new user shell. In this case, it runs the program "occ", and passes some configuration options as a parameter. See the [su man page](https://www.freebsd.org/cgi/man.cgi?su(1)) for more information.
@@ -1047,7 +1049,16 @@ Restart the Apache service:
 $ service apache24 restart
 ```
 
-At this stage, your Nextcloud server should be ready to go for local network use. However, there may be some security warnings present in the Administration panel. Some common advisories include:
+At this stage, your Nextcloud server should be ready to go for local network use.
+If you are getting an 'Internal Server Error' try restarting your jail by first exiting the iocage console. Then restart it and re-enter it.
+
+```bash
+$ exit
+$ iocage restart -s nextcloud
+$ iocage console nextcloud
+```
+
+There may be some security warnings present in the Administration panel. Some common advisories include:
 
 > The database is missing some indexes. Due to the fact that adding indexes on big tables could take some time they were not added automatically. By running "occ db:add-missing-indices" those missing indexes could be added manually while the instance keeps running. Once the indexes are added queries to those tables are usually much faster.
 
@@ -1902,7 +1913,7 @@ During this process, you may run into errors that I have not addressed. My sugge
 1. Nextcloud logs 
 
 ```
-/var/log/nextcloud/nextcloud.log
+/usr/local/www/nextcloud/data/nextcloud.log
 ```
 
 2. Apache logs 
